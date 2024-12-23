@@ -1,42 +1,36 @@
 # Library imports
 import pygame as py
-
+import numpy as np
 # Implementation imports
 from src.settings.settings import Settings, Colors
 from src.utils.Text import Text, TextManagement
-from src.classes import knematic_limb as kl
-
+from src.classes import procedural_animals as pa
 def main():
     # ================ INITIAL VARIABLES ================
     py.init()
     screen_info = py.display.Info()
     # set_resolution(info_object.current_w, info_object.current_h)
     SCREEN = py.display.set_mode((screen_info.current_w, screen_info.current_h)) #, py.FULLSCREEN
-    py.display.set_caption('Py Inverse Kinematics: Tentacles')
+    py.display.set_caption('Py Procedural Animations')
     CLOCK = py.time.Clock()
     SETTINGS = Settings(WIDTH=screen_info.current_w, HEIGHT=screen_info.current_h)
+    SETTINGS.SCREEN_CENTER = (SETTINGS.WIDTH / 2, SETTINGS.HEIGHT / 2)
     texts: dict ={
         'FPS': (SETTINGS.REFERENCE_FPS, 0, 0)
     }
     TEXT_MANAGEMENT: TextManagement = TextManagement(texts)
 
     # ================ OBJECTS ================
-    def reset_tentacles():
+    def reset_objects() -> list[pa.Procedural_Creature]:
         return [
-            kl.Tentacle(
+            pa.Procedural_Creature(
                 SCREEN,
-                (SETTINGS.MARGIN + i * (SETTINGS.WIDTH - SETTINGS.MARGIN*2)/(SETTINGS.N_TENTACLES-1),
-                SETTINGS.HEIGHT - SETTINGS.MARGIN),
-                SETTINGS.N_LIMBS,
-                SETTINGS.TOTAL_LENGTH,
-                SETTINGS.THICKNESS,
-                SETTINGS.SMOOT_FACTOR,
-                Colors.LIGHT_BLUE
+                SETTINGS.SCREEN_CENTER,
+                [np.log((SETTINGS.N_PARTS-i+1))*20 for i in range(SETTINGS.N_PARTS)],
+                Colors.WHITE
             )
-            for i in range(SETTINGS.N_TENTACLES)
         ]
-
-    tentacles: list[kl.Tentacle] = reset_tentacles()
+    objects = reset_objects()
 
     # ================ RUNNING LOOP ================
     RUNNING_GAME: bool = True
@@ -47,25 +41,25 @@ def main():
         if delta_time == 0: continue
         TEXT_MANAGEMENT.FPS.set_value(round(1/delta_time, 2)*SETTINGS.REFERENCE_FPS)
         # ================ OBJECT HANDLER ================
-        for tentacle in tentacles:
-            tentacle.follow_mouse(delta_time)
-            tentacle.render(draw_joint= True)
+        for obj in objects:
+            obj.follow_mouse(delta_time)
+            obj.render(delta_time)
         # ================ KEY HANDLER ================
         key = py.key.get_pressed()
         if key[py.K_r]:
-            tentacles = reset_tentacles()
-        elif key[py.K_w]:
-            for tentacle in tentacles:
-                tentacle.move_tentacle_by((0,-1))
-        elif key[py.K_s]:
-            for tentacle in tentacles:
-                tentacle.move_tentacle_by((0,1))
-        elif key[py.K_a]:
-            for tentacle in tentacles:
-                tentacle.move_tentacle_by((-1,0))
-        elif key[py.K_d]:
-            for tentacle in tentacles:
-                tentacle.move_tentacle_by((1,0))
+            objects = reset_objects()
+        # elif key[py.K_w]:
+        #     # spider.move_spider_by((0,-SETTINGS.MOVING_SPEED))
+        #     ojects.move_spider_forward(delta_time*SETTINGS.MOVING_SPEED)
+        # elif key[py.K_s]:
+        #     # spider.move_spider_by((0,SETTINGS.MOVING_SPEED))
+        #     ojects.move_spider_backwards(delta_time*SETTINGS.MOVING_SPEED)
+        # elif key[py.K_a]:
+        #     # spider.move_spider_by((-SETTINGS.MOVING_SPEED,0))
+        #     ojects.move_spider_left(delta_time*SETTINGS.MOVING_SPEED)
+        # elif key[py.K_d]:
+        #     # spider.move_spider_by((SETTINGS.MOVING_SPEED,0))
+        #     ojects.move_spider_right(delta_time*SETTINGS.MOVING_SPEED)
         # ================ EVENT HANDLER LOOP ================
         events = py.event.get()
         for event in events:
