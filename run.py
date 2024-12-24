@@ -27,6 +27,7 @@ def main():
                 SCREEN,
                 SETTINGS.SCREEN_CENTER,
                 [np.log((SETTINGS.N_PARTS-i+1))*20 for i in range(SETTINGS.N_PARTS)],
+                # [50, 20, 20, 50, 30, 40],
                 Colors.WHITE
             )
         ]

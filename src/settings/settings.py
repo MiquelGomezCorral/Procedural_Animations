@@ -12,6 +12,7 @@ class Colors:
 
 @dataclass
 class Settings:
+    DEBUGGING_MODE: bool = False
     BACKGROUND_COLOR: color_type = Colors.LIGHT_GREY
     REFERENCE_FPS: int = 1200
 
