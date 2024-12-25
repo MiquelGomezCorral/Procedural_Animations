@@ -32,7 +32,29 @@ def get_point_from_pdl(point: np.array, d: float, l: float, rad: bool = True) ->
     return point + l * np.array([np.cos(d), np.sin(d)])
 
 
-class Procedural_Creature():
+class WobblyEyes:
+    def __init__(self, screen, pos1: point_type, pos2: point_type, radius: float):
+        self.screen = screen
+        self.pos1 = parse_point(pos1)
+        self.pos2 = parse_point(pos2)
+        self.radius = radius
+
+    def render(self):
+        mouse = parse_point(py.mouse.get_pos())
+        direction_1 = mouse - self.pos1
+        direction_1 /= np.linalg.norm(direction_1)
+        direction_2 = mouse - self.pos2
+        direction_2 /= np.linalg.norm(direction_2)
+
+        py.draw.circle(self.screen, Colors.WHITE, self.pos1, self.radius)
+        py.draw.circle(self.screen, Colors.WHITE, self.pos2, self.radius)
+        py.draw.circle(self.screen, Colors.BLACK, self.pos1 + direction_1 * self.radius * 0.8, self.radius * 0.4)
+        py.draw.circle(self.screen, Colors.BLACK, self.pos2 + direction_2 * self.radius * 0.8, self.radius * 0.4)
+
+    def set_pos(self, pos1, pos2):
+        self.pos1, self.pos2 = pos1, pos2
+
+class ProceduralCreature:
     def __init__(self, screen, pos: point_type, body_size: list[float], color: color_type, overlapping_body: bool = False):
         self.screen = screen
 
@@ -45,27 +67,71 @@ class Procedural_Creature():
         self.width = 1
         self.overlapping_body = overlapping_body
 
+        pos1, pos2 = self.get_eyes_pos()
+        self.eyes = WobblyEyes(self.screen, pos1, pos2, body_size[0]*0.3)
+
     def render(self, delta_time: float):
+        perpend = np.array([self.body_direction[1], -self.body_direction[0]])
+        nose1 = self.body_direction * self.body_size[0]*1.25 + self.body_pos[0]
+        nose2 = self.body_direction * self.body_size[0] + self.body_pos[0] - perpend * self.body_size[0] * 0.6
+        nose3 = self.body_direction * self.body_size[0] + self.body_pos[0] + perpend * self.body_size[0] * 0.6
+
+        shape_1: list[point_type] = [
+            nose2, nose1, nose3,
+            perpend * self.body_size[0] + self.body_pos[0]
+        ]
+        shape_2: list[point_type] = [-perpend * self.body_size[0] + self.body_pos[0]]
+        for i in range(1, self.n):
+            # py.draw.circle(self.screen, Colors.WHITE, self.body_pos[i], self.body_size[i], self.width)
+            # py.draw.circle(self.screen, Colors.WHITE, self.body_pos[i], 5)
+
+            direction = self.body_pos[i-1] - self.body_pos[i]
+            direction /= np.linalg.norm(direction)
+            perpend = np.array([direction[1], -direction[0]])
+
+            if Settings.SPECIAL_SMOOTHING:
+                shape_1 += [perpend*(self.body_size[i] + self.body_size[i-1])/2 + self.body_pos[i] + direction*self.body_size[i]/3]
+                shape_1 += [perpend*self.body_size[i] + self.body_pos[i]]
+                if i < self.n - 1:
+                    shape_1 += [perpend*(self.body_size[i] + self.body_size[i+1])/2 + self.body_pos[i] - direction*self.body_size[i]/3]
+
+                shape_2 += [-perpend * (self.body_size[i] + self.body_size[i - 1]) / 2 + self.body_pos[i] + direction*self.body_size[i]/3]
+                shape_2 += [-perpend * self.body_size[i] + self.body_pos[i]]
+                if i < self.n - 1:
+                    shape_2 += [-perpend*(self.body_size[i] + self.body_size[i+1])/2 + self.body_pos[i] - direction*self.body_size[i]/3]
+            else:
+                shape_1 += [perpend*self.body_size[i] + self.body_pos[i]]
+                shape_2 += [-perpend * self.body_size[i] + self.body_pos[i]]
+
+        if self.n > 1:
+            direction = self.body_pos[-2] - self.body_pos[-1]
+            direction /= np.linalg.norm(direction)
+            tail = -direction * self.body_size[-1] + self.body_pos[-1]
+            shape_1 += [tail]
+
+        points = shape_1 + list(reversed(shape_2))
+
+
         if Settings.DEBUGGING_MODE:
             for body_part, body_size in zip(self.body_pos, self.body_size):
-                py.draw.circle(self.screen, self.color, body_part, body_size, self.width)
-                py.draw.circle(self.screen, self.color, body_part, 5)
+                py.draw.circle(self.screen, Colors.WHITE, body_part, body_size, self.width)
+                py.draw.circle(self.screen, Colors.WHITE, body_part, 5)
+            for point in points:
+                py.draw.circle(self.screen, Colors.BLACK, point, 5)
+
         else:
-            shape_1: list[point_type] = []
-            shape_2: list[point_type] = []
+            py.draw.polygon(self.screen, self.color, points)
+            py.draw.polygon(self.screen, Colors.WHITE, points, 3)
+            self.eyes.render()
 
-            nose = self.body_direction * self.body_size[0] + self.body_pos[0]
-            perpend = np.array([self.body_direction[1], -self.body_direction[0]])
-            shape_1 += [perpend * self.body_size[0] + self.body_pos[0]]
-            shape_2 += [- perpend * self.body_size[0] + self.body_pos[0]]
+    def get_eyes_pos(self) -> tuple[point_type, point_type]:
+        perpend = np.array([self.body_direction[1], -self.body_direction[0]])
+        pos1 = self.body_direction * self.body_size[0] + self.body_pos[0] - perpend * self.body_size[0] * 0.6
+        pos2 = self.body_direction * self.body_size[0] + self.body_pos[0] + perpend * self.body_size[0] * 0.6
+        return pos1, pos2
 
-            for body_part, body_size in zip(self.body_pos[0:], self.body_size[0:]):
-                py.draw.circle(self.screen, self.color, body_part, body_size, self.width)
-                py.draw.circle(self.screen, self.color, body_part, 5)
-
-
-
-            py.draw.polygon(self.screen, self.color, [nose] + shape_1 + list(reversed(shape_2)))
+    def update_eyes_pos(self):
+        self.eyes.set_pos(*self.get_eyes_pos())
 
     def start_body_pos(self, ):
         positions = [self.body_pos[0]]
@@ -96,9 +162,10 @@ class Procedural_Creature():
         self.move_towards((x, y), delta_time)
 
     def move_towards(self, point: point_type, delta_time: float):
-        direction = self.body_direction + (point - self.body_pos[0]) * delta_time / 10000
+        direction = self.body_direction + (point - self.body_pos[0]) * delta_time * 2.5e-5
         direction /= np.linalg.norm(direction)
         self.body_direction = direction
         self.body_pos[0] += self.body_direction * delta_time * Settings.MOVING_SPEED
+        self.update_eyes_pos()
 
         self.update_body_pos(self.overlapping_body)

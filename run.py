@@ -21,14 +21,14 @@ def main():
     TEXT_MANAGEMENT: TextManagement = TextManagement(texts)
 
     # ================ OBJECTS ================
-    def reset_objects() -> list[pa.Procedural_Creature]:
+    def reset_objects() -> list[pa.ProceduralCreature]:
         return [
-            pa.Procedural_Creature(
+            pa.ProceduralCreature(
                 SCREEN,
                 SETTINGS.SCREEN_CENTER,
-                [np.log((SETTINGS.N_PARTS-i+1))*20 for i in range(SETTINGS.N_PARTS)],
-                # [50, 20, 20, 50, 30, 40],
-                Colors.WHITE
+                [40]+[np.log((SETTINGS.N_PARTS-i+1))*10 for i in range(SETTINGS.N_PARTS)],
+                # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
+                Colors.GREEN
             )
         ]
     objects = reset_objects()
