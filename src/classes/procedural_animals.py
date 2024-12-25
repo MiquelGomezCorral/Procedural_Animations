@@ -32,14 +32,14 @@ class ProceduralCreature:
         self.screen = screen
 
         self.n = len(body_size)
-        self.n_points_smooth = self.n * 5
+        self.n_points_smooth = int(self.n * 5 + body_size[0])
+        self.fin_points = 16
         self.body_size = body_size
         self.body_pos = [utils.parse_point(pos)]
         self.body_direction = np.array([0,0], dtype=float)
         self.start_body_pos()
         self.color_base = color_base
         self.color_contrast = color_contrast
-        self.fin_points = 16
         self.overlapping_body = overlapping_body
 
         pos1, pos2 = self.get_eyes_pos()
@@ -108,7 +108,7 @@ class ProceduralCreature:
 
             self.draw_smooth_points(shape_points)
 
-            self.draw_fin_back_fin(int(self.n * 0.5))
+            self.draw_fin_back_fin(int(self.n * 0.3))
 
             self.eyes.render()
 
@@ -124,16 +124,17 @@ class ProceduralCreature:
     def draw_fin_back_fin(self, index: int):
         assert self.n >= 4, "Need at least 4 parts to draw the back fin"
 
-        points_fin = []
+        points_fin = list(self.body_pos[index - 1 : index + 2])
         for i in range(index-1, index+2): #[i-1, i, i+1]
             direction = self.body_pos[i - 1] - self.body_pos[i]
             # No normalization so we get the "angle" / "Distance" between two segments
-            # direction /= np.linalg.norm(direction)
-            points_fin += [self.body_pos[i] + direction]
+            direction_norm = direction / np.linalg.norm(direction)
+            points_fin = [self.body_pos[i] - direction_norm*self.body_size[i]] + points_fin
 
-        points_fin += list(self.body_pos[index - 1 : index + 2])
 
         self.draw_smooth_points(points_fin, self.fin_points * 2, self.color_contrast)
+        # for point in points_fin:
+        #     py.draw.circle(self.screen, Colors.BLACK, point, 3)
 
     def draw_fin_lateral_fin(self, index: int):
         assert self.n >= 2, "Need at least 2 parts to draw the side fins"

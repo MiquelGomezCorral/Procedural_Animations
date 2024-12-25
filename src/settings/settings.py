@@ -33,8 +33,8 @@ class Settings:
     MARGIN: float = 100
 
     MOVING_SPEED: float = 0.5
-
     SMOOT_FACTOR: float = 1e-5
+
+    N_FISH: int = 1
     N_PARTS: int = 10
-    N_FISH: int = 15
-    FISH_SIZE: float = 10
+    FISH_SIZE: float = 20
