@@ -39,11 +39,22 @@ class ProceduralCreature:
         self.start_body_pos()
         self.color_base = color_base
         self.color_contrast = color_contrast
-        self.width = 1
+        self.fin_points = 16
         self.overlapping_body = overlapping_body
 
         pos1, pos2 = self.get_eyes_pos()
         self.eyes = WobblyEyes(self.screen, pos1, pos2, body_size[0]*0.5)
+
+    def draw_smooth_points(self, points, n_points_smooth: int = None, color: color_type = None):
+        if n_points_smooth is None:
+            n_points_smooth = self.n_points_smooth
+        if color is None:
+            color = self.color_base
+
+        x_smooth, y_smooth = utils.b_spline(points + [points[0]], n_points_smooth)  # add first point again to close loop
+        smooth_points = list(zip(x_smooth, y_smooth))
+        py.draw.polygon(self.screen, color, smooth_points)  # Fill
+        py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)  # Shape
 
     def render(self, delta_time: float):
         perpend = np.array([self.body_direction[1], -self.body_direction[0]])
@@ -83,24 +94,22 @@ class ProceduralCreature:
             tail = -direction * self.body_size[-1] + self.body_pos[-1]
             shape_1 += [tail]
 
-        points = shape_1 + list(reversed(shape_2)) # Connect the pairs of points
+        shape_points = shape_1 + list(reversed(shape_2)) # Connect the pairs of points
         if Settings.DEBUGGING_MODE:
             for body_part, body_size in zip(self.body_pos, self.body_size):
-                py.draw.circle(self.screen, Colors.WHITE, body_part, body_size, self.width)
+                py.draw.circle(self.screen, Colors.WHITE, body_part, body_size, 1)
                 py.draw.circle(self.screen, Colors.WHITE, body_part, 5)
-            for point in points:
+            for point in shape_points:
                 py.draw.circle(self.screen, Colors.BLACK, point, 5)
         else:
-            x_smooth, y_smooth = utils.b_spline(points + [points[0]], self.n_points_smooth) # add first point again to close loop
-            smooth_points = list(zip(x_smooth, y_smooth))
 
             self.draw_fin_lateral_fin(int(self.n * 0.2))
             self.draw_fin_lateral_fin(int(self.n * 0.7))
 
+            self.draw_smooth_points(shape_points)
+
             self.draw_fin_back_fin(int(self.n * 0.5))
 
-            py.draw.polygon(self.screen, self.color_base, smooth_points)  # Fill
-            py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)  # Shape
             self.eyes.render()
 
     def get_eyes_pos(self) -> tuple[utils.point_type, utils.point_type]:
@@ -113,33 +122,21 @@ class ProceduralCreature:
         self.eyes.set_pos(*self.get_eyes_pos())
 
     def draw_fin_back_fin(self, index: int):
-        if index < 2 :
-            index = 2
-        direction = self.body_pos[index - 2] - self.body_pos[index]
-        direction /= np.linalg.norm(direction)
-        perpend = np.array([direction[1], -direction[0]])
+        assert self.n >= 4, "Need at least 4 parts to draw the back fin"
 
-        width  = self.body_size[index] * 0.5
-        height = self.body_size[index] * 0.75
-        # fin 1
-        fin_point_1 = perpend * self.body_size[index] + self.body_pos[index]
-        direction_1 = self.body_pos[index - 1] - fin_point_1
-        direction_1 /= np.linalg.norm(direction_1)
-        perpend_1 = np.array([direction_1[1], -direction_1[0]])
+        points_fin = []
+        for i in range(index-1, index+2): #[i-1, i, i+1]
+            direction = self.body_pos[i - 1] - self.body_pos[i]
+            # No normalization so we get the "angle" / "Distance" between two segments
+            # direction /= np.linalg.norm(direction)
+            points_fin += [self.body_pos[i] + direction]
 
-        points_fin_1 = [
-            fin_point_1 + direction_1 * height,
-            fin_point_1 + perpend_1 * width,
-            fin_point_1 - direction_1 * height,
-            fin_point_1 - perpend_1 * width,
-        ]
+        points_fin += list(self.body_pos[index - 1 : index + 2])
 
-        fin_point_2 = - perpend * self.body_size[index] + self.body_pos[index]
-        direction_2 = self.body_pos[index - 1] - fin_point_2
-        direction_2 /= np.linalg.norm(direction_2)
-        perpend_2 = np.array([direction_2[1], -direction_2[0]])
+        self.draw_smooth_points(points_fin, self.fin_points * 2, self.color_contrast)
 
     def draw_fin_lateral_fin(self, index: int):
+        assert self.n >= 2, "Need at least 2 parts to draw the side fins"
         if index < 2 :
             index = 2
         direction = self.body_pos[index - 2] - self.body_pos[index]
@@ -172,15 +169,8 @@ class ProceduralCreature:
             fin_point_2 - direction_2 * height,
             fin_point_2 - perpend_2 * width,
         ]
-        x_smooth, y_smooth = utils.b_spline(points_fin_1 + [points_fin_1[0]], 16)  # add first point again to close loop
-        smooth_points = list(zip(x_smooth, y_smooth))
-        py.draw.polygon(self.screen, self.color_contrast, smooth_points)  # Fill
-        py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)
-
-        x_smooth, y_smooth = utils.b_spline(points_fin_2 + [points_fin_2[0]], 16)  # add first point again to close loop
-        smooth_points = list(zip(x_smooth, y_smooth))
-        py.draw.polygon(self.screen, self.color_contrast, smooth_points)  # Fill
-        py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)
+        self.draw_smooth_points(points_fin_1, self.fin_points, self.color_contrast)
+        self.draw_smooth_points(points_fin_2, self.fin_points, self.color_contrast)
 
     def start_body_pos(self, ):
         positions = [self.body_pos[0]]
@@ -204,7 +194,6 @@ class ProceduralCreature:
                     move -= self.body_size[i - 1]
             self.body_pos[i] += direction * move
 
-
     def follow_mouse(self, delta_time: float):
         x, y = py.mouse.get_pos()
         # self.point_towards((x, y), delta_time)
@@ -212,7 +201,7 @@ class ProceduralCreature:
 
     def move_towards(self, point: utils.point_type, delta_time: float):
         noise = np.random.uniform(-1e-2,1e-2)
-        direction = self.body_direction + noise + (point - self.body_pos[0]) * delta_time * 1e-5
+        direction = self.body_direction + noise + (point - self.body_pos[0]) * delta_time * Settings.SMOOT_FACTOR
         direction /= np.linalg.norm(direction)
         self.body_direction = direction
         self.body_pos[0] += self.body_direction * delta_time * Settings.MOVING_SPEED

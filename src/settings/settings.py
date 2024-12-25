@@ -34,5 +34,7 @@ class Settings:
 
     MOVING_SPEED: float = 0.5
 
-    SMOOT_FACTOR: float = 0.01
-    N_PARTS: int = 5
+    SMOOT_FACTOR: float = 1e-5
+    N_PARTS: int = 10
+    N_FISH: int = 15
+    FISH_SIZE: float = 10
