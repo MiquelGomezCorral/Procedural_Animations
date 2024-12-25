@@ -35,4 +35,4 @@ class Settings:
     MOVING_SPEED: float = 0.5
 
     SMOOT_FACTOR: float = 0.01
-    N_PARTS: int = 15
+    N_PARTS: int = 5

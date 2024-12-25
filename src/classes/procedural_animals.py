@@ -28,7 +28,7 @@ class WobblyEyes:
         self.pos1, self.pos2 = pos1, pos2
 
 class ProceduralCreature:
-    def __init__(self, screen, pos: utils.point_type, body_size: list[float], color: color_type, overlapping_body: bool = False):
+    def __init__(self, screen, pos: utils.point_type, body_size: list[float], color_base: color_type, color_contrast: color_type, overlapping_body: bool = False):
         self.screen = screen
 
         self.n = len(body_size)
@@ -37,7 +37,8 @@ class ProceduralCreature:
         self.body_pos = [utils.parse_point(pos)]
         self.body_direction = np.array([0,0], dtype=float)
         self.start_body_pos()
-        self.color = color
+        self.color_base = color_base
+        self.color_contrast = color_contrast
         self.width = 1
         self.overlapping_body = overlapping_body
 
@@ -82,9 +83,7 @@ class ProceduralCreature:
             tail = -direction * self.body_size[-1] + self.body_pos[-1]
             shape_1 += [tail]
 
-        points = shape_1 + list(reversed(shape_2))
-
-
+        points = shape_1 + list(reversed(shape_2)) # Connect the pairs of points
         if Settings.DEBUGGING_MODE:
             for body_part, body_size in zip(self.body_pos, self.body_size):
                 py.draw.circle(self.screen, Colors.WHITE, body_part, body_size, self.width)
@@ -94,8 +93,14 @@ class ProceduralCreature:
         else:
             x_smooth, y_smooth = utils.b_spline(points + [points[0]], self.n_points_smooth) # add first point again to close loop
             smooth_points = list(zip(x_smooth, y_smooth))
-            py.draw.polygon(self.screen, self.color, smooth_points)
-            py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)
+
+            self.draw_fin_lateral_fin(int(self.n * 0.2))
+            self.draw_fin_lateral_fin(int(self.n * 0.7))
+
+            self.draw_fin_back_fin(int(self.n * 0.5))
+
+            py.draw.polygon(self.screen, self.color_base, smooth_points)  # Fill
+            py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)  # Shape
             self.eyes.render()
 
     def get_eyes_pos(self) -> tuple[utils.point_type, utils.point_type]:
@@ -106,6 +111,76 @@ class ProceduralCreature:
 
     def update_eyes_pos(self):
         self.eyes.set_pos(*self.get_eyes_pos())
+
+    def draw_fin_back_fin(self, index: int):
+        if index < 2 :
+            index = 2
+        direction = self.body_pos[index - 2] - self.body_pos[index]
+        direction /= np.linalg.norm(direction)
+        perpend = np.array([direction[1], -direction[0]])
+
+        width  = self.body_size[index] * 0.5
+        height = self.body_size[index] * 0.75
+        # fin 1
+        fin_point_1 = perpend * self.body_size[index] + self.body_pos[index]
+        direction_1 = self.body_pos[index - 1] - fin_point_1
+        direction_1 /= np.linalg.norm(direction_1)
+        perpend_1 = np.array([direction_1[1], -direction_1[0]])
+
+        points_fin_1 = [
+            fin_point_1 + direction_1 * height,
+            fin_point_1 + perpend_1 * width,
+            fin_point_1 - direction_1 * height,
+            fin_point_1 - perpend_1 * width,
+        ]
+
+        fin_point_2 = - perpend * self.body_size[index] + self.body_pos[index]
+        direction_2 = self.body_pos[index - 1] - fin_point_2
+        direction_2 /= np.linalg.norm(direction_2)
+        perpend_2 = np.array([direction_2[1], -direction_2[0]])
+
+    def draw_fin_lateral_fin(self, index: int):
+        if index < 2 :
+            index = 2
+        direction = self.body_pos[index - 2] - self.body_pos[index]
+        direction /= np.linalg.norm(direction)
+        perpend = np.array([direction[1], -direction[0]])
+
+        width  = self.body_size[index] * 0.5
+        height = self.body_size[index] * 0.75
+        # fin 1
+        fin_point_1 = perpend * self.body_size[index] + self.body_pos[index]
+        direction_1 = self.body_pos[index - 1] - fin_point_1
+        direction_1 /= np.linalg.norm(direction_1)
+        perpend_1 = np.array([direction_1[1], -direction_1[0]])
+
+        points_fin_1 = [
+            fin_point_1 + direction_1 * height,
+            fin_point_1 + perpend_1 * width,
+            fin_point_1 - direction_1 * height,
+            fin_point_1 - perpend_1 * width,
+        ]
+
+        fin_point_2 = - perpend * self.body_size[index] + self.body_pos[index]
+        direction_2 = self.body_pos[index - 1] - fin_point_2
+        direction_2 /= np.linalg.norm(direction_2)
+        perpend_2 = np.array([direction_2[1], -direction_2[0]])
+
+        points_fin_2 = [
+            fin_point_2 + direction_2 * height,
+            fin_point_2 + perpend_2 * width,
+            fin_point_2 - direction_2 * height,
+            fin_point_2 - perpend_2 * width,
+        ]
+        x_smooth, y_smooth = utils.b_spline(points_fin_1 + [points_fin_1[0]], 16)  # add first point again to close loop
+        smooth_points = list(zip(x_smooth, y_smooth))
+        py.draw.polygon(self.screen, self.color_contrast, smooth_points)  # Fill
+        py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)
+
+        x_smooth, y_smooth = utils.b_spline(points_fin_2 + [points_fin_2[0]], 16)  # add first point again to close loop
+        smooth_points = list(zip(x_smooth, y_smooth))
+        py.draw.polygon(self.screen, self.color_contrast, smooth_points)  # Fill
+        py.draw.polygon(self.screen, Colors.WHITE, smooth_points, 3)
 
     def start_body_pos(self, ):
         positions = [self.body_pos[0]]

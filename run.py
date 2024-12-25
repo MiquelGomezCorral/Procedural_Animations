@@ -27,11 +27,12 @@ def main():
             pa.ProceduralCreature(
                 SCREEN,
                 center + np.random.uniform(-1000, 1000, 2),
-                [np.log((SETTINGS.N_PARTS-i+1))*5 for i in range(SETTINGS.N_PARTS)],
+                [35, 40, 40, 35] + [np.log((SETTINGS.N_PARTS-i+1))*15 for i in range(SETTINGS.N_PARTS)],
                 # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
-                color
+                color_base, color_contrast
             )
-            for color in get_rgb_iterator(25, 0.75)
+            for color_base, color_contrast in
+                zip(get_rgb_iterator(20, 0.7), get_rgb_iterator(20, 1))
         ]
     objects = reset_objects()
 
