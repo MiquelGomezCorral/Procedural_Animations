@@ -2,7 +2,7 @@
 import pygame as py
 import numpy as np
 # Implementation imports
-from src.settings.settings import Settings, Colors
+from src.settings.settings import Settings, Colors, get_rgb_iterator
 from src.utils.Text import Text, TextManagement
 from src.classes import procedural_animals as pa
 def main():
@@ -22,14 +22,16 @@ def main():
 
     # ================ OBJECTS ================
     def reset_objects() -> list[pa.ProceduralCreature]:
+        center = np.array(SETTINGS.SCREEN_CENTER)
         return [
             pa.ProceduralCreature(
                 SCREEN,
-                SETTINGS.SCREEN_CENTER,
-                [40]+[np.log((SETTINGS.N_PARTS-i+1))*10 for i in range(SETTINGS.N_PARTS)],
+                center + np.random.uniform(-1000, 1000, 2),
+                [np.log((SETTINGS.N_PARTS-i+1))*5 for i in range(SETTINGS.N_PARTS)],
                 # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
-                Colors.GREEN
+                color
             )
+            for color in get_rgb_iterator(25, 0.75)
         ]
     objects = reset_objects()
 

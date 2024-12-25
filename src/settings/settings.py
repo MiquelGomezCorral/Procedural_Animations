@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-
+import matplotlib.colors as mcolors
 
 color_type = tuple[int,int,int]
 @dataclass
@@ -10,6 +10,15 @@ class Colors:
     LIGHT_BLUE = (68, 190, 242)
     LIGHT_GREY = (87, 121, 156)
     GREEN = (104, 171, 108)
+
+def get_rgb_iterator(n_colors, light: float = 0.7):
+    # Generate evenly spaced colors in HSV space
+    hsv_colors = [(i / n_colors, 1.0, 1.0) for i in range(n_colors)]
+    # Convert HSV to RGB
+    rgb_colors = [tuple(mcolors.hsv_to_rgb(hsv)) for hsv in hsv_colors]
+    # Scale RGB values to 0-255 if needed (optional)
+    rgb_colors_scaled = [(int(r * 255 * light), int(g * 255 * light), int(b * 255 * light)) for r, g, b in rgb_colors]
+    return rgb_colors_scaled
 
 @dataclass
 class Settings:
