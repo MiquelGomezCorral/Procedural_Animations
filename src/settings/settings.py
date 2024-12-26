@@ -10,6 +10,7 @@ class Colors:
     LIGHT_BLUE = (68, 190, 242)
     LIGHT_GREY = (87, 121, 156)
     GREEN = (104, 171, 108)
+    RED = (255, 0, 0)
 
 def get_rgb_iterator(n_colors, light: float = 0.7):
     # Generate evenly spaced colors in HSV space
@@ -24,6 +25,7 @@ def get_rgb_iterator(n_colors, light: float = 0.7):
 class Settings:
     DEBUGGING_MODE: bool = False
     SPECIAL_SMOOTHING: bool = False
+    OVERLAP_BODY: bool = False
     BACKGROUND_COLOR: color_type = Colors.LIGHT_GREY
     REFERENCE_FPS: int = 1200
 
@@ -37,4 +39,4 @@ class Settings:
 
     N_FISH: int = 1
     N_PARTS: int = 10
-    FISH_SIZE: float = 20
+    FISH_SIZE: float = 7.5 * 2

@@ -48,3 +48,12 @@ def b_spline(waypoints, num_points: int = 100):
     u = np.linspace(0, 1, num=num_points)
     smooth_shape = interpolate.splev(u, tck)
     return smooth_shape
+
+def compute_angle(a,b,normalized: bool = False):
+    if normalized:
+        return np.arccos(np.dot(a, b))  # Both normalized, denominator = 1
+    else:
+        return np.arccos(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)) )
+
+def cross_product(a, b):
+    return a[0] * b[1] - a[1] * b[0]

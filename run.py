@@ -16,7 +16,10 @@ def main():
     SETTINGS = Settings(WIDTH=screen_info.current_w, HEIGHT=screen_info.current_h)
     SETTINGS.SCREEN_CENTER = (SETTINGS.WIDTH / 2, SETTINGS.HEIGHT / 2)
     texts: dict ={
-        'FPS': (SETTINGS.REFERENCE_FPS, 0, 0)
+        'FPS': (SETTINGS.REFERENCE_FPS, 0, 0),
+        'Debugging_Mode_1': (SETTINGS.OVERLAP_BODY, 0, 20),
+        'Overlap_Body_2': (SETTINGS.OVERLAP_BODY, 0, 40),
+        # 'ANGLE_DIF': (0, 0, 100)
     }
     TEXT_MANAGEMENT: TextManagement = TextManagement(texts)
 
@@ -29,7 +32,8 @@ def main():
                 center + np.random.uniform(-1000, 1000, 2),
                 [np.log((SETTINGS.N_PARTS-i+1))*SETTINGS.FISH_SIZE for i in range(SETTINGS.N_PARTS)],
                 # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
-                color_base, color_contrast
+                color_base, color_contrast,
+                overlapping_body=SETTINGS.OVERLAP_BODY
             )
             for color_base, color_contrast in
                 zip(get_rgb_iterator(SETTINGS.N_FISH, 0.75), get_rgb_iterator(SETTINGS.N_FISH, 1))
@@ -47,7 +51,9 @@ def main():
         # ================ OBJECT HANDLER ================
         for obj in objects:
             obj.follow_mouse(delta_time)
-            obj.render(delta_time)
+            angle = obj.render(delta_time)
+            obj.update_settings(SETTINGS)
+            # TEXT_MANAGEMENT.ANGLE_DIF.set_value((round(angle, 4)))
         # ================ KEY HANDLER ================
         key = py.key.get_pressed()
         if key[py.K_r]:
@@ -72,6 +78,12 @@ def main():
             elif event.type == py.KEYUP:
                 if event.key == py.K_ESCAPE:
                     RUNNING_GAME = False; break
+                if event.key == py.K_1:
+                    SETTINGS.DEBUGGING_MODE = not SETTINGS.DEBUGGING_MODE
+                    TEXT_MANAGEMENT.Debugging_Mode_1.set_value(SETTINGS.DEBUGGING_MODE)
+                if event.key == py.K_2:
+                    SETTINGS.OVERLAP_BODY = not SETTINGS.OVERLAP_BODY
+                    TEXT_MANAGEMENT.Overlap_Body_2.set_value(SETTINGS.OVERLAP_BODY)
         # ================ RE-RENDER ================
         TEXT_MANAGEMENT.render(SCREEN)
         py.display.update()
