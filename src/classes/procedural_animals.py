@@ -1,8 +1,9 @@
 import numpy as np
 import pygame as py
 
-from src.settings.settings import Colors, Settings, color_type
 from src.utils import utils
+from src.classes import knematic_limb as kl
+from src.settings.settings import Colors, Settings, color_type
 
 
 class WobblyEyes:
@@ -30,8 +31,7 @@ class WobblyEyes:
 class ProceduralCreature:
     def __init__(self, screen, pos: utils.point_type,
                  body_size: list[float], color_base: color_type,
-                 color_contrast: color_type, overlapping_body: bool = False,
-                 debugging_mode: bool = False
+                 color_contrast: color_type, settings: Settings
     ):
         self.screen = screen
 
@@ -46,17 +46,24 @@ class ProceduralCreature:
         self.color_base = color_base
         self.color_contrast = color_contrast
 
-        self.overlapping_body = overlapping_body
-        self.debugging_mode = debugging_mode
+        self.settings = settings
         self.n_points_smooth = int(self.n * 5 + body_size[0])
         self.fin_points = 16
 
         pos1, pos2 = self.get_eyes_pos()
         self.eyes = WobblyEyes(self.screen, pos1, pos2, body_size[0]*0.5)
 
+        self.members_index_1 = int(self.n * 0.2)
+        self.members_index_2 = int(self.n * 0.3)
+        self.members_index_3 = int(self.n * 0.7)
+        self.members_indices = [self.members_index_1, self.members_index_3]
+
+        self.legs: dict[int, list[kl.Tentacle]] = {}
+        self.support_points: list[np.ndarray] = []
+        self.generate_legs(self.members_indices)
+
     def update_settings(self, settings: Settings):
-        self.overlapping_body = settings.OVERLAP_BODY
-        self.debugging_mode = settings.DEBUGGING_MODE
+        self.settings = settings
 
     def draw_smooth_points(self, points, n_points_smooth: int = None, color: color_type = None):
         if n_points_smooth is None:
@@ -74,7 +81,8 @@ class ProceduralCreature:
             py.draw.circle(self.screen, color, point, size)
 
     def render(self, delta_time: float):
-        perpend = np.array([self.body_direction[1], -self.body_direction[0]])
+        # =================== MAIN HEAD POINTS ===================
+        perpend = utils.get_perpendicular(self.body_direction)
         nose1 = self.body_direction * self.body_size[0]*1.25 + self.body_pos[0]
         nose2 = self.body_direction * self.body_size[0] + self.body_pos[0] - perpend * self.body_size[0] * 0.6
         nose3 = self.body_direction * self.body_size[0] + self.body_pos[0] + perpend * self.body_size[0] * 0.6
@@ -87,12 +95,14 @@ class ProceduralCreature:
             -perpend * self.body_size[0] + self.body_pos[0]
         ]
 
+        # =================== BODY ===================
         prev_dir = self.body_direction
         self.angle_dif = 0
         for i in range(1, self.n -1):
             direction = self.body_pos[i-1] - self.body_pos[i]
             direction /= np.linalg.norm(direction)
-            perpend = np.array([direction[1], -direction[0]])
+            perpend = utils.get_perpendicular(direction)
+
 
             angle_dif = utils.compute_angle(direction, prev_dir, normalized=True) # Both normalized, denominator = 1
             self.angle_dif += utils.cross_product(direction, prev_dir) * angle_dif
@@ -127,25 +137,37 @@ class ProceduralCreature:
 
         self.angle_dif = np.degrees(self.angle_dif / (self.n - 1))  # Number of angles between body parts
 
+        # =================== DRAWING THE POINTS ===================
+        #                       ORDER MATTERS
         shape_points = shape_1 + list(reversed(shape_2)) # Connect the pairs of points
-        if self.debugging_mode:
+        if self.settings.DEBUGGING_MODE:
             for body_part, body_size in zip(self.body_pos, self.body_size):
                 py.draw.circle(self.screen, Colors.WHITE, body_part, body_size, 1)
                 py.draw.circle(self.screen, Colors.WHITE, body_part, 5)
             self.draw_debug_points(shape_points, 5)
 
-        self.draw_fin_lateral_fin(int(self.n * 0.2))
-        self.draw_fin_lateral_fin(int(self.n * 0.7))
-        self.draw_tail_fin()
-        if not self.debugging_mode:
+        if self.settings.DRAW_LEGS:
+            for index in self.members_indices:
+                self.draw_fin_legs(index, delta_time)
+
+        if self.settings.DRAW_FINS:
+            for index in self.members_indices:
+                self.draw_fin_lateral_fin(index)
+            self.draw_tail_fin()
+
+        if not self.settings.DEBUGGING_MODE:
             self.draw_smooth_points(shape_points)
+
+        if self.settings.DRAW_EYES:
             self.eyes.render()
-        self.draw_fin_back_fin(int(self.n * 0.3))
+
+        if self.settings.DRAW_FINS:
+            self.draw_fin_back_fin(self.members_index_2)
 
         return self.angle_dif
 
     def get_eyes_pos(self) -> tuple[utils.point_type, utils.point_type]:
-        perpend = np.array([self.body_direction[1], -self.body_direction[0]])
+        perpend = utils.get_perpendicular(self.body_direction)
         pos1 = self.body_direction * self.body_size[0] + self.body_pos[0] - perpend * self.body_size[0] * 0.6
         pos2 = self.body_direction * self.body_size[0] + self.body_pos[0] + perpend * self.body_size[0] * 0.6
         return pos1, pos2
@@ -158,7 +180,7 @@ class ProceduralCreature:
 
         direction = self.body_pos[-2] - self.body_pos[-1]
         direction /= np.linalg.norm(direction)
-        perpend = np.array([direction[1], -direction[0]])
+        perpend = utils.get_perpendicular(direction)
 
         fin_length_prop = 2
         points_fin = [
@@ -169,7 +191,7 @@ class ProceduralCreature:
             self.body_pos[-1] - direction*self.avg_body_size*fin_length_prop - perpend*self.angle_dif
         ]
 
-        if self.debugging_mode:
+        if self.settings.DEBUGGING_MODE:
             self.draw_debug_points(points_fin, color=Colors.RED)
         else:
             self.draw_smooth_points(points_fin, self.fin_points * 2, self.color_contrast)
@@ -184,7 +206,7 @@ class ProceduralCreature:
             direction_norm = direction / np.linalg.norm(direction)
             points_fin = [self.body_pos[i] - direction_norm*self.body_size[i]] + points_fin
 
-        if self.debugging_mode:
+        if self.settings.DEBUGGING_MODE:
             self.draw_debug_points(points_fin, color=Colors.RED)
         else:
             self.draw_smooth_points(points_fin, self.fin_points * 2, self.color_contrast)
@@ -195,7 +217,7 @@ class ProceduralCreature:
             index = 2
         direction = self.body_pos[index - 2] - self.body_pos[index]
         direction /= np.linalg.norm(direction)
-        perpend = np.array([direction[1], -direction[0]])
+        perpend = utils.get_perpendicular(direction)
 
         width  = self.avg_body_size * 0.5
         height = self.avg_body_size * 0.75
@@ -203,7 +225,7 @@ class ProceduralCreature:
         fin_point_1 = perpend * self.body_size[index] + self.body_pos[index]
         direction_1 = self.body_pos[index - 1] - fin_point_1
         direction_1 /= np.linalg.norm(direction_1)
-        perpend_1 = np.array([direction_1[1], -direction_1[0]])
+        perpend_1 = utils.get_perpendicular(direction_1)
 
         points_fin_1 = [
             fin_point_1 + direction_1 * height,
@@ -215,7 +237,7 @@ class ProceduralCreature:
         fin_point_2 = - perpend * self.body_size[index] + self.body_pos[index]
         direction_2 = self.body_pos[index - 1] - fin_point_2
         direction_2 /= np.linalg.norm(direction_2)
-        perpend_2 = np.array([direction_2[1], -direction_2[0]])
+        perpend_2 = utils.get_perpendicular(direction_2)
 
         points_fin_2 = [
             fin_point_2 + direction_2 * height,
@@ -223,12 +245,82 @@ class ProceduralCreature:
             fin_point_2 - direction_2 * height,
             fin_point_2 - perpend_2 * width,
         ]
-        if self.debugging_mode:
+        if self.settings.DEBUGGING_MODE:
             self.draw_debug_points(points_fin_1 + points_fin_2, color=Colors.RED)
 
         else:
             self.draw_smooth_points(points_fin_1, self.fin_points, self.color_contrast)
             self.draw_smooth_points(points_fin_2, self.fin_points, self.color_contrast)
+
+    def draw_fin_legs(self, index: int, delta_time: float):
+        if index == 0:
+            direction = self.body_direction
+        else:
+            direction = self.body_pos[index - 1] - self.body_pos[index]
+            direction /= np.linalg.norm(direction)
+
+        perpend = utils.get_perpendicular(direction)
+        anchor_point_1 = self.body_pos[index] + perpend * self.body_size[index] * 0.8
+        support_point_1 = self.body_pos[index] + perpend * self.body_size[index] * 2 + direction * self.body_size[index] * 2
+        anchor_point_2 = self.body_pos[index] - perpend * self.body_size[index] * 0.8
+        support_point_2 = self.body_pos[index] - perpend * self.body_size[index] * 2 + direction * self.body_size[index] * 2
+
+        old_anchor_1 =  self.legs[index][0].get_objective()
+        old_anchor_2 =  self.legs[index][1].get_objective()
+
+        if utils.compare_dist_opt(old_anchor_1, support_point_1, self.legs[index][0].get_length()*2):
+            new_anchor_1 = None
+        else: new_anchor_1 = support_point_1
+        if utils.compare_dist_opt(old_anchor_2, support_point_2, self.legs[index][1].get_length()*2):
+            new_anchor_2 = None
+        else: new_anchor_2 = support_point_2
+
+        self.legs[index][0].move_tentacle_to(anchor_point_1)
+        self.legs[index][1].move_tentacle_to(anchor_point_2)
+
+        self.legs[index][0].point_towards(delta_time, new_anchor_1)
+        self.legs[index][1].point_towards(delta_time, new_anchor_2)
+
+        points_1 = self.legs[index][0].get_drawing_points()
+        points_2 = self.legs[index][1].get_drawing_points()
+
+        if self.settings.DEBUGGING_MODE:
+            self.draw_debug_points([support_point_1, support_point_2])
+            self.draw_debug_points([old_anchor_1, old_anchor_2], size=5, color=Colors.GREEN)
+            self.draw_debug_points(points_1 + points_2, size=3, color=Colors.LIGHT_BLUE)
+            self.legs[index][0].render(draw_joint=self.settings.DEBUGGING_MODE, thickness=2)
+            self.legs[index][1].render(draw_joint=self.settings.DEBUGGING_MODE, thickness=2)
+        else:
+            self.draw_smooth_points(points_1, self.n_points_smooth, self.color_contrast)
+            self.draw_smooth_points(points_2, self.n_points_smooth, self.color_contrast)
+
+    def generate_legs(self, positions: list[int]):
+        width = self.avg_body_size * 0.25
+        for pos in positions:
+            if pos == 0:
+                direction = self.body_direction
+            else:
+                direction = self.body_pos[pos-1] - self.body_pos[pos]
+                direction /= np.linalg.norm(direction)
+
+            perpend = np.array([direction[1], -direction[0]])
+
+            points: list[np.ndarray] = [
+                self.body_pos[pos] + perpend * self.body_size[pos],
+                self.body_pos[pos] - perpend * self.body_size[pos],
+            ]
+            self.legs[pos]: list[kl.Tentacle] = []
+            for point in points:
+                self.legs[pos].append(kl.Tentacle(
+                    screen=self.screen,
+                    pos=point,
+                    n_limbs=2,
+                    total_length=self.avg_body_size,
+                    thickness=width,
+                    smooth_factor=0.1,
+                    color=self.color_contrast,
+                    shorten_first_limb=False
+                ))
 
     def start_body_pos(self, ):
         positions = [self.body_pos[0]]
@@ -241,7 +333,7 @@ class ProceduralCreature:
             direction = self.body_pos[i-1] - self.body_pos[i]
             dist = np.linalg.norm(direction)
             direction /= dist
-            if self.overlapping_body:
+            if self.settings.OVERLAP_BODY:
                 # NOT OVER-LAPPING BODY
                 dist -= (self.body_size[i] + self.body_size[i-1])
             else:
@@ -259,10 +351,10 @@ class ProceduralCreature:
 
     def move_towards(self, point: utils.point_type, delta_time: float):
         noise = np.random.uniform(-1e-2,1e-2)
-        direction = self.body_direction + noise + (point - self.body_pos[0]) * delta_time * Settings.SMOOT_FACTOR
+        direction = self.body_direction + noise + (point - self.body_pos[0]) * delta_time * self.settings.SMOOT_FACTOR
         direction /= np.linalg.norm(direction)
         self.body_direction = direction
-        self.body_pos[0] += self.body_direction * delta_time * Settings.MOVING_SPEED
+        self.body_pos[0] += self.body_direction * delta_time * self.settings.MOVING_SPEED
         self.update_eyes_pos()
 
         self.update_body_pos()

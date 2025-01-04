@@ -23,9 +23,16 @@ def get_rgb_iterator(n_colors, light: float = 0.7):
 
 @dataclass
 class Settings:
+    RUNNING: bool = True
+
     DEBUGGING_MODE: bool = False
     SPECIAL_SMOOTHING: bool = False
     OVERLAP_BODY: bool = False
+
+    DRAW_EYES: bool = True
+    DRAW_FINS: bool = True
+    DRAW_LEGS: bool = False
+
     BACKGROUND_COLOR: color_type = Colors.LIGHT_GREY
     REFERENCE_FPS: int = 1200
 
@@ -37,6 +44,6 @@ class Settings:
     MOVING_SPEED: float = 0.5
     SMOOT_FACTOR: float = 1e-5
 
-    N_FISH: int = 1
+    N_ANIMALS: int = 1
     N_PARTS: int = 10
-    FISH_SIZE: float = 7.5 * 2
+    FISH_SIZE: float = 15

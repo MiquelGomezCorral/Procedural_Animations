@@ -57,3 +57,16 @@ def compute_angle(a,b,normalized: bool = False):
 
 def cross_product(a, b):
     return a[0] * b[1] - a[1] * b[0]
+
+def get_perpendicular(v: np.ndarray):
+    return np.array([v[1], -v[0]])
+
+def compare_dist_opt(v: np.ndarray, u: np.ndarray, dist: float) -> bool:
+    """
+    return True if u and v are closer than dist, else o.w. in an efficient way
+    :param v: Point 1
+    :param u: Point 2
+    :param dist: max dist
+    :return: True if u and v are closer than dist, else o.w.
+    """
+    return (v[0] - u[0])**2 + (v[1] - u[1])**2 <= dist**2
