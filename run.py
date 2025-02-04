@@ -18,9 +18,13 @@ def main():
     SETTINGS.SCREEN_CENTER = (SETTINGS.WIDTH / 2, SETTINGS.HEIGHT / 2)
     texts: dict ={
         'FPS': (SETTINGS.REFERENCE_FPS, 0, 0),
-        'N_Animals': (SETTINGS.N_ANIMALS, 100, 20),
         '(Up / Down ↕)': (SETTINGS.N_ANIMALS, 0, 20),
+        'N_Animals': ("", 100, 20),
         'Speed_Wheel': (SETTINGS.MOVING_SPEED, 0, 40),
+        'Size_S_W': (SETTINGS.FISH_SIZE, 0, 60),
+        'Text_R': ("Press R to reset", 0, 80),
+        'Text_T': ("Press T hide text", 0, 100),
+
         'Debugging_Mode_1': (SETTINGS.OVERLAP_BODY, SETTINGS.WIDTH - 175, 0),
         'Overlap_Body_2': (SETTINGS.OVERLAP_BODY, SETTINGS.WIDTH - 175, 20),
         'Draw_Eyes_3': (SETTINGS.DRAW_EYES, SETTINGS.WIDTH - 175, 40),
@@ -37,7 +41,10 @@ def main():
             pa.ProceduralCreature(
                 SCREEN,
                 center + np.random.uniform(-1000, 1000, 2),
-                [np.log((SETTINGS.N_PARTS-i+1))*SETTINGS.FISH_SIZE for i in range(SETTINGS.N_PARTS)],
+                [
+                    np.log((SETTINGS.N_PARTS-i+1)) * SETTINGS.FISH_REFERENCE_SIZE
+                    for i in range(SETTINGS.N_PARTS)
+                ],
                 # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
                 color_base, color_contrast,
                 SETTINGS
@@ -56,7 +63,10 @@ def main():
             pa.ProceduralCreature(
                 SCREEN,
                 center + np.random.uniform(-1000, 1000, 2),
-                [np.log((SETTINGS.N_PARTS - i + 1)) * SETTINGS.FISH_SIZE for i in range(SETTINGS.N_PARTS)],
+                [
+                    np.log((SETTINGS.N_PARTS - i + 1)) * SETTINGS.FISH_REFERENCE_SIZE
+                    for i in range(SETTINGS.N_PARTS)
+                ],
                 # [50, 40, 30, 40, 30, 40, 30, 25, 20, 20, 15, 10, 5, 5],
                 color_base, color_contrast,
                 SETTINGS
@@ -84,20 +94,13 @@ def main():
             # TEXT_MANAGEMENT.ANGLE_DIF.set_value((round(angle, 4)))
         # ================ KEY HANDLER ================
         key = py.key.get_pressed()
-        # if key[py.K_r]:
-        #     objects = reset_objects()
-        # elif key[py.K_w]:
-        #     # spider.move_spider_by((0,-SETTINGS.MOVING_SPEED))
-        #     ojects.move_spider_forward(delta_time*SETTINGS.MOVING_SPEED)
-        # elif key[py.K_s]:
-        #     # spider.move_spider_by((0,SETTINGS.MOVING_SPEED))
-        #     ojects.move_spider_backwards(delta_time*SETTINGS.MOVING_SPEED)
-        # elif key[py.K_a]:
-        #     # spider.move_spider_by((-SETTINGS.MOVING_SPEED,0))
-        #     ojects.move_spider_left(delta_time*SETTINGS.MOVING_SPEED)
-        # elif key[py.K_d]:
-        #     # spider.move_spider_by((SETTINGS.MOVING_SPEED,0))
-        #     ojects.move_spider_right(delta_time*SETTINGS.MOVING_SPEED)
+        if key[py.K_w]:
+            SETTINGS.FISH_SIZE = SETTINGS.FISH_SIZE + 0.01
+            TEXT_MANAGEMENT.Size_S_W.set_value(round(SETTINGS.FISH_SIZE, 2))
+        elif key[py.K_s]:
+            if SETTINGS.FISH_SIZE >= 0.15:
+                SETTINGS.FISH_SIZE = SETTINGS.FISH_SIZE - 0.01
+            TEXT_MANAGEMENT.Size_S_W.set_value(round(SETTINGS.FISH_SIZE, 2))
         # ================ EVENT HANDLER LOOP ================
         events = py.event.get()
         for event in events:
@@ -108,6 +111,8 @@ def main():
                     SETTINGS.RUNNING = False; break
                 if event.key == py.K_r:
                     objects = reset_objects()
+                if event.key == py.K_t:
+                    SETTINGS.SHOW_TEXT = not SETTINGS.SHOW_TEXT
                 if event.key == py.K_1:
                     SETTINGS.DEBUGGING_MODE = not SETTINGS.DEBUGGING_MODE
                     TEXT_MANAGEMENT.Debugging_Mode_1.set_value(SETTINGS.DEBUGGING_MODE)
@@ -140,7 +145,7 @@ def main():
                 TEXT_MANAGEMENT.Speed_Wheel.set_value(SETTINGS.MOVING_SPEED)
 
         # ================ RE-RENDER ================
-        TEXT_MANAGEMENT.render(SCREEN)
+        TEXT_MANAGEMENT.render(SCREEN, SETTINGS.SHOW_TEXT)
         py.display.update()
 
 if __name__ == '__main__':

@@ -34,12 +34,13 @@ class ProceduralCreature:
                  color_contrast: color_type, settings: Settings
     ):
         self.screen = screen
+        self.original_body_size = np.array(body_size)
+        self.body_size = np.array(body_size)
 
         self.n = len(body_size)
         self.avg_body_size = sum(body_size) / self.n
         self.angle_dif = 0
 
-        self.body_size = body_size
         self.body_pos = [utils.parse_point(pos)]
         self.body_direction = np.array([0,0], dtype=float)
         self.start_body_pos()
@@ -64,6 +65,15 @@ class ProceduralCreature:
 
     def update_settings(self, settings: Settings):
         self.settings = settings
+
+        # Adjust body size
+        self.body_size = self.original_body_size * settings.FISH_SIZE
+
+        self.avg_body_size = sum(self.body_size) / self.n
+        self.n_points_smooth = int(self.n * 5 + self.body_size[0])
+        pos1, pos2 = self.get_eyes_pos()
+        self.eyes = WobblyEyes(self.screen, pos1, pos2, float(self.body_size[0]*0.5))
+
 
     def draw_smooth_points(self, points, n_points_smooth: int = None, color: color_type = None):
         if n_points_smooth is None:

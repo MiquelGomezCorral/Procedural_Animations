@@ -24,19 +24,21 @@ class Text:
 
 
 class TextManagement:
-    def __init__(self, texts: dict, text_size: int = 15):
+    def __init__(self, texts: dict, text_size: int = 15, show_text: bool = True):
         self.text_font = py.font.SysFont("Arial", text_size)
+        self.show_text = show_text
         for text_name, (value, x, y) in texts.items():
             setattr(self, text_name, Text(text_name, value, x, y))
 
-    def render(self, screen):
+    def render(self, screen, show_text: bool = True):
+        self.show_text = show_text
+        if not show_text: return
         for attr_name, text_to_render in self.__dict__.items():
             if isinstance(text_to_render, Text):
                 img = self.text_font.render(
                     str(text_to_render), True, text_to_render.text_col
                 )
                 screen.blit(img, text_to_render.pos)
-
 
 """
 text: dict = {
