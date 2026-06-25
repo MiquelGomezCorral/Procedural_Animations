@@ -25,6 +25,10 @@ screenShoots:
   - readme_images/Procedural (8).webp
   - readme_images/Procedural (9).webp
 youtube: DXGSoyjN9PA
+keywords:
+  en: [procedural animation, zero keyframes, creature simulation, organic movement, fish creature, cursor following, real-time rendering, generative art, smoothing curves, wobbly eyes, fins]
+  es: [animación procedural, cero keyframes, simulación de criaturas, movimiento orgánico, criatura pez, seguimiento del cursor, renderizado en tiempo real, arte generativo, curvas de suavizado, ojos saltones, aletas]
 slug: Procedural_Animations
 order: 68
 featured: false
+
