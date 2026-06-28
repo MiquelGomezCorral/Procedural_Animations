@@ -10,7 +10,7 @@ descriptionLong:
     Using Python, Pygame, and NumPy, I employed the concept of zero keyframes: instead of using images for texture, I drew and rendered the frames of a moving creature to make it appear alive. The main idea was to create fish-like creatures with fins and wobbly eyes. I then incorporated some of my previous work on Inverse Kinematics to generate the legs. With some smoothing curve techniques, I made the shapes of the creatures smooth and visually appealing. The results are incredible visuals of creatures that move as if they were alive and following you!
   es: |
     Utilizando Python, Pygame y NumPy, he aplicado el concepto de cero keyframes: en lugar de usar imágenes como texturas, se dibujan y renderizan los fotogramas de una criatura en movimiento para que parezca viva. La idea era crear criaturas parecidas a peces, con aletas y ojos saltones, y luego añadí parte de mi trabajo en Inverse Kinematics para darles patas. Con algunas técnicas de suavizado logré que las formas se vieran más fluidas y naturales. El resultado son imágenes sorprendentes de criaturas que se mueven como si estuvieran vivas y siguen el cursor.
-technologies: [python, pygame, numpy]
+technologies: [matplot, numpy, pygame, python]
 tags: [personal]
 logo: readme_images/Procedural (1).webp
 screenShoots:
@@ -34,5 +34,6 @@ keywords:
 slug: Procedural_Animations
 order: 68
 featured: false
+
 
 
